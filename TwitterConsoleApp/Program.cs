@@ -27,15 +27,22 @@ namespace TwitterConsoleApp
                 ACCESS_TOKEN_SECRET = results[3].Trim();
             }
 
+            //Sets the credentials read from secret file to the oauth process on tewwtinvi
             Auth.SetUserCredentials(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
 
             var stream = Tweetinvi.Stream.CreateFilteredStream();
-            stream.AddTrack("MARVEL"); //sets the tag to be searched for on twitter by Tweetinvi
+
+            var user = User.GetUserFromScreenName("@realDonaldTrump");
+            stream.AddFollow(user); //Follow user
+            //stream.AddTrack("potus"); //sets the tag to be searched for on twitter by Tweetinvi
             stream.MatchingTweetReceived += (sender, theTweet) =>
             {
-                Console.WriteLine($"\n{theTweet.Tweet}\n");
+                Console.WriteLine($"\n{theTweet.Tweet}");
+
+                Tweet.PublishTweet(theTweet.Tweet.ToString());
             };
             stream.StartStreamMatchingAllConditions();
+
 
         }
 
