@@ -72,6 +72,7 @@ namespace TwitterConsoleApp
             Console.WriteLine(" 1) Follow hashtag");
             Console.WriteLine(" 2) Follow user");
             Console.WriteLine(" 3) Listen for interactions");
+            Console.WriteLine(" 4) Send a Tweet");
             Console.WriteLine("\n--------------------------------------------------------");
 
             var option = Console.ReadLine();
@@ -87,6 +88,9 @@ namespace TwitterConsoleApp
                     break;
                 case "3":
                     ReplyToTweet();
+                    break;
+                case "4":
+                    SendTweet();
                     break;
                 default:
                     Console.WriteLine("Invalid Selection");
@@ -137,13 +141,13 @@ namespace TwitterConsoleApp
 
             stream.MatchingTweetReceived += (sender, theTweet) =>
             {
-                if (theTweet.Tweet.UserMentions.Any((x) => x.Id == 1047486196602081281))
+                if (theTweet.Tweet.UserMentions.Any((x) => x.Id == 1047486196602081281)) //bots twitter ID
                 {
                     var replyTweet = GenerateRandomTweet();
                     var tweetToReplyTo = Tweet.GetTweet(theTweet.Tweet.Id);
 
                     Tweet.PublishTweetInReplyTo(replyTweet, tweetToReplyTo);
-                    /*return*/;
+                    stream.StopStream(); //End stream after publishing reply
                 }
 
             };
@@ -170,6 +174,15 @@ namespace TwitterConsoleApp
                 default:
                     return "";
             }
+        }
+
+        public static void SendTweet()
+        {
+            Console.WriteLine("Tell us what's on your mind:");
+
+            var tweet = Console.ReadLine();
+
+            Tweet.PublishTweet(tweet);
         }
     }
 }
