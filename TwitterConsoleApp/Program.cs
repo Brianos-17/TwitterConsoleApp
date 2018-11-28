@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace TwitterConsoleApp
 {
@@ -70,6 +71,7 @@ namespace TwitterConsoleApp
             Console.WriteLine("\n Please select an option:");
             Console.WriteLine(" 1) Follow hashtag");
             Console.WriteLine(" 2) Follow user");
+            Console.WriteLine(" 3) Listen for interactions");
             Console.WriteLine("\n--------------------------------------------------------");
 
             var option = Console.ReadLine();
@@ -83,6 +85,9 @@ namespace TwitterConsoleApp
                     break;
                 case "2":
                     break;
+                case "3":
+                    ReplyToTweet();
+                    break;
                 default:
                     Console.WriteLine("Invalid Selection");
                     Thread.Sleep(2000);
@@ -95,15 +100,76 @@ namespace TwitterConsoleApp
         {
             var stream = Tweetinvi.Stream.CreateFilteredStream();
 
-            stream.AddTrack(track);//sets the passed in parameter as the hastag to search
+            stream.AddTrack("#" + track);//sets the passed in parameter as the hastag to search
             stream.MatchingTweetReceived += (sender, theTweet) =>
             {
-                Console.WriteLine($"\n{theTweet.Tweet}");
+                Console.WriteLine($"\n{Regex.Replace(theTweet.Tweet.ToString(), @"amp;|\n", "")}");
+                Thread.Sleep(5000);
 
-                Tweet.PublishTweet(theTweet.Tweet.ToString());
+                //Tweet.PublishTweet(theTweet.Tweet.ToString()); 
             };
             stream.StartStreamMatchingAllConditions();
 
+        }
+
+    //    var stream = Tweetinvi.Stream.CreateFilteredStream();
+
+    //    var user = User.GetUserFromScreenName("@realDonaldTrump");
+    //    stream.AddFollow(user); //Follow user
+
+    //        stream.AddTrack("potus"); //sets the tag to be searched for on twitter by Tweetinvi
+
+    //        stream.AddLocation(new Coordinates(38, 77), new Coordinates(38, 77)); //searches for tweets from a given location
+
+    //        stream.MatchingTweetReceived += (sender, theTweet) =>
+    //        {
+    //            Console.WriteLine($"\n{theTweet.Tweet}");
+
+    //            Tweet.PublishTweet(theTweet.Tweet.ToString());
+    //        };
+    //stream.StartStreamMatchingAllConditions();
+
+
+        public static void ReplyToTweet()
+        {
+            var stream = Tweetinvi.Stream.CreateFilteredStream();
+            stream.AddTrack("@devosullivanb"); //Search for tweets @ the bot
+
+            stream.MatchingTweetReceived += (sender, theTweet) =>
+            {
+                if (theTweet.Tweet.UserMentions.Any((x) => x.Id == 1047486196602081281))
+                {
+                    var replyTweet = GenerateRandomTweet();
+                    var tweetToReplyTo = Tweet.GetTweet(theTweet.Tweet.Id);
+
+                    Tweet.PublishTweetInReplyTo(replyTweet, tweetToReplyTo);
+                    /*return*/;
+                }
+
+            };
+            stream.StartStreamMatchingAllConditions();
+        }
+
+        public static string GenerateRandomTweet()
+        {
+            Random random = new Random();
+            int randomInt = random.Next(1,5);
+
+            switch (randomInt)
+            {
+                case 1:
+                    return "Hello";
+                case 2:
+                    return "Hey, how's it going?";
+                case 3:
+                    return "Hope you're having a nice day!";
+                case 4:
+                    return "Sorry, I'm a little busy at the moment... I'll get back to you later";
+                case 5:
+                    return "What's up?";
+                default:
+                    return "";
+            }
         }
     }
 }
