@@ -67,75 +67,90 @@ namespace TwitterConsoleApp
         {
             Console.Clear();
 
-            Console.WriteLine("--------------------------------------------------------");
-            Console.WriteLine("\n Please select an option:");
-            Console.WriteLine(" 1) Follow hashtag");
-            Console.WriteLine(" 2) Follow user");
+            Console.WriteLine("\n--------------------------------------------------------");
+            Console.WriteLine("\n Please select an option:\n");
+            Console.WriteLine(" 1) Follow a Hashtag");
+            Console.WriteLine(" 2) Follow a User");
             Console.WriteLine(" 3) Listen for interactions");
             Console.WriteLine(" 4) Send a Tweet");
             Console.WriteLine("\n--------------------------------------------------------");
+            Console.WriteLine("\n 0) Exit\n");
 
             var option = Console.ReadLine();
 
-            switch (option)
+            while (option != "0")
             {
-                case "1":
-                    Console.WriteLine("Please enter your search term: ");
-                    var track = Console.ReadLine();
-                    AddTrack(track);
-                    break;
-                case "2":
-                    break;
-                case "3":
-                    ReplyToTweet();
-                    break;
-                case "4":
-                    SendTweet();
-                    break;
-                default:
-                    Console.WriteLine("Invalid Selection");
-                    Thread.Sleep(2000);
-                    DisplayTweetsMenu();
-                    break;
+                switch (option)
+                {
+                    case "1":
+                        Console.WriteLine("Please enter your search term: ");
+                        var track = Console.ReadLine();
+                        AddTrack(track);
+                        break;
+                    case "2":
+                        Console.WriteLine("Who are you looking to follow? ");
+                        var screenName = Console.ReadLine();
+                        FollowUser(screenName);
+                        break;
+                    case "3":
+                        ReplyToTweet();
+                        break;
+                    case "4":
+                        SendTweet();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid Selection");
+                        Thread.Sleep(2000);
+                        DisplayTweetsMenu();
+                        break;
+                }
             }
         }
 
         private static void AddTrack(string track)
         {
+            int counter = 0;
             var stream = Tweetinvi.Stream.CreateFilteredStream();
 
             stream.AddTrack("#" + track);//sets the passed in parameter as the hastag to search
-            stream.MatchingTweetReceived += (sender, theTweet) =>
+            while (counter < 10)
             {
-                Console.WriteLine($"\n{Regex.Replace(theTweet.Tweet.ToString(), @"amp;|\n", "")}");
-                Thread.Sleep(5000);
-
-                //Tweet.PublishTweet(theTweet.Tweet.ToString()); 
-            };
-            stream.StartStreamMatchingAllConditions();
-
+                stream.MatchingTweetReceived += (sender, theTweet) =>
+                {
+                    Console.WriteLine($"\n{Regex.Replace(theTweet.Tweet.ToString(), @"amp;|\n", "")}");
+                    Thread.Sleep(3000);
+                    counter++;
+                    //Tweet.PublishTweet(theTweet.Tweet.ToString()); 
+                };
+                stream.StartStreamMatchingAllConditions();
+            }
+           
+            DisplayTweetsMenu();
         }
 
-    //    var stream = Tweetinvi.Stream.CreateFilteredStream();
+        public static void FollowUser(string screenName)
+        {
+            var user = User.GetUserFromScreenName(screenName);
+            if (user != null)
+            {
+                foreach (var tweet in Timeline.GetUserTimeline(user, 10)) //Only get the lastest 10 tweets
+                {
+                    Console.WriteLine(tweet + "\n");
+                }
+            }
+            else
+            {
+                Console.WriteLine("There doesn't seem to be any user by the name");
+            }
 
-    //    var user = User.GetUserFromScreenName("@realDonaldTrump");
-    //    stream.AddFollow(user); //Follow user
-
-    //        stream.AddTrack("potus"); //sets the tag to be searched for on twitter by Tweetinvi
-
-    //        stream.AddLocation(new Coordinates(38, 77), new Coordinates(38, 77)); //searches for tweets from a given location
-
-    //        stream.MatchingTweetReceived += (sender, theTweet) =>
-    //        {
-    //            Console.WriteLine($"\n{theTweet.Tweet}");
-
-    //            Tweet.PublishTweet(theTweet.Tweet.ToString());
-    //        };
-    //stream.StartStreamMatchingAllConditions();
-
+            DisplayTweetsMenu(); //Go back to menu
+        }
 
         public static void ReplyToTweet()
         {
+            Console.WriteLine("\nSetting up our listeners now!");
+            Thread.Sleep(2000);
+
             var stream = Tweetinvi.Stream.CreateFilteredStream();
             stream.AddTrack("@devosullivanb"); //Search for tweets @ the bot
 
@@ -143,15 +158,21 @@ namespace TwitterConsoleApp
             {
                 if (theTweet.Tweet.UserMentions.Any((x) => x.Id == 1047486196602081281)) //bots twitter ID
                 {
-                    var replyTweet = GenerateRandomTweet();
                     var tweetToReplyTo = Tweet.GetTweet(theTweet.Tweet.Id);
+                    var replyTweet = "@" + tweetToReplyTo.CreatedBy.ScreenName + " " + GenerateRandomTweet();
 
+                    Console.WriteLine("Just one second while we tweet you back...");
+                    Thread.Sleep(2000);
                     Tweet.PublishTweetInReplyTo(replyTweet, tweetToReplyTo);
-                    stream.StopStream(); //End stream after publishing reply
+                    Console.WriteLine("There we go, check your feed!\n");
+                    Thread.Sleep(2000);
+                    stream.StopStream();
                 }
 
             };
             stream.StartStreamMatchingAllConditions();
+
+            DisplayTweetsMenu();
         }
 
         public static string GenerateRandomTweet()
@@ -178,11 +199,15 @@ namespace TwitterConsoleApp
 
         public static void SendTweet()
         {
-            Console.WriteLine("Tell us what's on your mind:");
+            Console.WriteLine("Tell us what's on your mind: \n");
 
             var tweet = Console.ReadLine();
 
             Tweet.PublishTweet(tweet);
+            Console.WriteLine("\nGreat stuff, publishing your Tweet now...");
+            Thread.Sleep(2000);
+
+            DisplayTweetsMenu();
         }
     }
 }
